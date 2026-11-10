@@ -41,6 +41,11 @@
 ## 🧠 底层优化思考 (Why it works?)
 1. **`-ngl` 的威力**：将模型所有层强制塞入 GPU 显存，彻底消除了 CPU 与 GPU 之间的 PCIe 数据搬运瓶颈，读题速度暴涨 3 倍。
 2. **连续批处理的降维打击**：相比于 Ollama 的排队机制，`llama-server` 的 `n_slots` 机制让 GPU 可以在多个用户的请求间来回穿插，极大地降低了长尾延迟。
+3. ### 源码级原理解析 (Deep Dive into Source Code)
+通过阅读 `llama.cpp` 源码的 `tools/server/server-context.cpp`，我找到了连续批处理（Continuous Batching）的核心实现：
+- **槽位池化**：服务器通过 `std::vector<server_slot> slots` 管理并发用户的上下文，避免了频繁的内存申请与释放。
+- **动态调度**：在 `pre_decode` 函数中，通过判断 `params.base.cont_batching`，调度器会遍历所有活跃的 slot，将不同用户最新生成的 token 拼装进同一个 `llama_batch` 中。
+- **混合批次优化（Mixed Batch）**：源码中的 `use_mixed_batch()` 函数，允许将处于“读题（Prefill）”和“答题（Decode）”不同阶段的请求混合计算，进一步压榨了 GPU 的 Tensor Core 算力。
 
 ## 📂 仓库文件
 - `benchmark.py`: 基于 Python `requests` 的并发压测脚本（适配 OpenAI 标准 API）。
