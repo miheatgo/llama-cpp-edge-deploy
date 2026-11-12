@@ -47,5 +47,14 @@
 - **动态调度**：在 `pre_decode` 函数中，通过判断 `params.base.cont_batching`，调度器会遍历所有活跃的 slot，将不同用户最新生成的 token 拼装进同一个 `llama_batch` 中。
 - **混合批次优化（Mixed Batch）**：源码中的 `use_mixed_batch()` 函数，允许将处于“读题（Prefill）”和“答题（Decode）”不同阶段的请求混合计算，进一步压榨了 GPU 的 Tensor Core 算力。
 
+- ## 📉 模型量化实验 (Model Quantization)
+在 6GB 边缘设备上，完成从 HuggingFace (FP16) 到 GGUF (INT4) 的全链路量化，并进行性能对比。
+
+| 模型格式 | 文件大小 | Prompt 速度 | Generation 速度 | 备注 |
+| :--- | :--- | :--- | :--- | :--- |
+| BF16 (原版) | 942 MB | 110.3 t/s | 119.8 t/s | 基准线 |
+| **Q4_0 (4-bit 量化)** | **330 MB** | **383.5 t/s** | **189.5 t/s** | 体积缩小 65%，速度提升 58% |
+**结论**：量化不仅极大地缓解了端侧显存压力，更通过降低访存数据量，打破了 Memory-bound 瓶颈，实现了性能的全面超越。
+
 ## 📂 仓库文件
 - `benchmark.py`: 基于 Python `requests` 的并发压测脚本（适配 OpenAI 标准 API）。
