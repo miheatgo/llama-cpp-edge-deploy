@@ -56,5 +56,15 @@
 | **Q4_0 (4-bit 量化)** | **330 MB** | **383.5 t/s** | **189.5 t/s** | 体积缩小 65%，速度提升 58% |
 **结论**：量化不仅极大地缓解了端侧显存压力，更通过降低访存数据量，打破了 Memory-bound 瓶颈，实现了性能的全面超越。
 
+## ⚡ Triton 算子融合实战 (Kernel Fusion with Triton)
+在边缘设备上，针对 Transformer 中的 `Residual Add + LayerNorm` 手写了 Triton 融合算子，大幅降低了 HBM 访存带宽压力。
+
+**性能对比 (在 1024x2048 矩阵上，运行 100 次)：**
+- **PyTorch 原生多步实现**: 19.50 ms
+- **手写 Triton 融合算子**: 4.63 ms
+- **性能提升**: **4.21 倍** (精度误差 < 1e-6)
+
+**代码位置**: `fused_layernorm.py`
+
 ## 📂 仓库文件
 - `benchmark.py`: 基于 Python `requests` 的并发压测脚本（适配 OpenAI 标准 API）。
